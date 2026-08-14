@@ -670,12 +670,16 @@ detail inside a decade of millisecond timestamps).
   geometry is quantized to sub-pixel f32.
 - **Linear axes stay offset-encoded through the vertex transform.** The shader's
   affine view mapping is composed directly onto the encoded values (`xyMap`,
-  `js/src/40_gl.ts`); the CPU folds the offset into the affine constants in f64
-  (`_map`, `js/src/50_chartview.ts`). Decoding to absolute coordinates in-shader
-  first would discard the low bits whenever a deeply zoomed window is far smaller
-  than the offset — after which zooming back out could never recover the point
-  spread. Only log-family axes (log, symlog) decode before mapping, because their
-  transforms are not affine. *Augments §4.*
+  `js/src/40_gl.ts`); the CPU derives the encoded viewport midpoint and multiplier
+  in f64 (`_map`, `js/src/50_chartview.ts`) and rejects malformed non-finite or
+  non-positive encode scales. Valid tiny scales remain unchanged because they keep
+  extreme f64 domains inside the f32 vertex range (§19). The shader subtracts that
+  midpoint before multiplying, avoiding both reconstruction of a large absolute
+  coordinate and cancellation between large clip-space terms. Either would discard
+  low bits whenever a deeply zoomed window is far smaller than the offset — after
+  which zooming back out could never recover the point spread. Only log-family axes
+  (log, symlog) decode before mapping, because their transforms are not affine.
+  *Augments §4.*
 - **Log-family axes pin the encode offset to 0.0** (`lod.geometry_offset`) instead
   of re-centering on a midpoint. A midpoint offset makes f32 error *absolute*
   (~span/10⁷), which under symlog collapses exactly the neighborhood of zero the
