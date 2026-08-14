@@ -5400,6 +5400,8 @@ export class ChartView {
       const offset = (meta && Number.isFinite(meta.offset)) ? meta.offset : 0;
       const mul = 2 / (span * scale);
       const center = ((lo - offset) + span * 0.5) * scale;
+      // (encoded - center) * mul = (value - (lo + hi) / 2) * 2 / span,
+      // so lo/hi still map to -1/+1 without cancellation between large terms.
       if (![mul, center].every(Number.isFinite)) return [0, -2];
       return [mul, center];
     }
